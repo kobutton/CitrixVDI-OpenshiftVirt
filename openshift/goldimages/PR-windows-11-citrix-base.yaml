@@ -1,0 +1,46 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  annotations:
+    chains.tekton.dev/signed: 'true'
+    description: 'windows-customize pipeline provides functionality for windows VMs to e.g. install sql server, or install VS Code into windows VM. This pipeline can be reused for customizing Windows 10 and 11.'
+    operator-sdk/primary-resource: openshift-cnv/ssp-kubevirt-hyperconverged
+    operator-sdk/primary-resource-type: SSP.ssp.kubevirt.io
+    pipeline.openshift.io/started-by: kobutton_adm
+  generateName: windows-customize-
+  namespace: openshift-cnv
+  finalizers:
+    - chains.tekton.dev/pipelinerun
+  labels:
+    app.kubernetes.io/component: tektonPipelines
+    app.kubernetes.io/managed-by: ssp-operator
+    app.kubernetes.io/name: tekton-pipelines
+    app.kubernetes.io/part-of: hyperconverged-cluster
+    app.kubernetes.io/version: 4.14.3
+    tekton.dev/pipeline: windows-customize
+spec:
+  params:
+    - name: instanceTypeName
+      value: u1.large
+    - name: instanceTypeKind
+      value: VirtualMachineClusterInstancetype
+    - name: preferenceName
+      value: windows.10
+    - name: virtualMachinePreferenceKind
+      value: VirtualMachineClusterPreference
+    - name: customizeConfigMapName
+      value: windows-install-citrix-vda
+    - name: sourceDiskImageName
+      value: win10
+    - name: sourceDiskImageNamespace
+      value: openshift-virtualization-os-images
+    - name: baseDvName
+      value: win10-vdi
+    - name: baseDvNamespace
+      value: openshift-virtualization-os-images
+  pipelineRef:
+    name: windows-customize
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 1h0m0s

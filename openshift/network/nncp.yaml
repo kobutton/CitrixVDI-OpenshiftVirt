@@ -1,0 +1,13 @@
+apiVersion: nmstate.io/v1
+kind: NodeNetworkConfigurationPolicy
+metadata:
+  name: cnv-bridge
+spec:
+  desiredState:
+    interfaces:
+      - bridge:
+          port:
+            - name: INTERFACE_NAME
+        name: cnv-bridge
+        state: up
+        type: linux-bridge

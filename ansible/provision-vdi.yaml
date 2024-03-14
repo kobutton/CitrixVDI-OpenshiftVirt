@@ -1,0 +1,84 @@
+## Requrires localhost to have a valid kubernetes definition
+---
+- name: Provision VDI on OpenShift Virtualization
+  hosts: localhost
+  gather_facts: false
+  connection: local
+  tasks: 
+
+    - name: Process VM template 
+      community.okd.openshift_process:
+        name: "{{ openshift_vdi_template }}"
+        namespace: "{{ vm_namespace }}"
+        namespace_target: "{{ vm_namespace }}"
+        parameters: 
+          NAME: '{{ vm_name }}'
+        state: present 
+
+    - name: Start the VM
+      kubernetes.core.k8s_json_patch: 
+        kind: VirtualMachine
+        api_version: kubevirt.io/v1
+        namespace: "{{ vm_namespace }}"
+        name: '{{ vm_name }}'
+        patch: 
+          - op: replace
+            path: /spec/running
+            value: true
+
+    - name: Wait for the VM to be running.
+      debug: 
+        msg: Waiting for VM to be Running
+      until: "query('kubernetes.core.k8s', kind='VirtualMachine', namespace=vm_namespace, api_version='kubevirt.io/v1', resource_name=vm_name )[0]['status']['printableStatus'] == 'Running'" 
+      retries: 10
+      delay: 20
+
+    - name: Remove Sysprep
+      kubernetes.core.k8s_json_patch: 
+        kind: VirtualMachine
+        api_version: kubevirt.io/v1
+        namespace: "{{ vm_namespace }}"
+        name: '{{ vm_name }}'
+        patch: 
+          - op: remove
+            path: /spec/template/spec/domain/devices/disks/1
+          - op: remove
+            path: /spec/template/spec/volumes/1
+      
+    - name: Power off the VM gracefully
+      kubernetes.core.k8s_json_patch: 
+        kind: VirtualMachine
+        api_version: kubevirt.io/v1
+        namespace: "{{ vm_namespace }}"
+        name: '{{ vm_name }}'
+        patch: 
+          - op: replace
+            path: /spec/running
+            value: false
+
+    - name: Wait for the VM to be Stopped.
+      debug: 
+        msg: Waiting for VM to be Stopped.
+      until: "query('kubernetes.core.k8s', kind='VirtualMachine', namespace=vm_namespace, api_version='kubevirt.io/v1', resource_name=vm_name )[0]['status']['printableStatus'] == 'Stopped'"
+      retries: 30
+      delay: 30
+
+    - name: Start the VM again
+      kubernetes.core.k8s_json_patch: 
+        kind: VirtualMachine
+        api_version: kubevirt.io/v1
+        namespace: "{{ vm_namespace }}"
+        name: '{{ vm_name }}'
+        patch: 
+          - op: replace
+            path: /spec/running
+            value: true
+    
+    - name: Add new VM to AAP inventory
+      when: runing_in_app | default(false)
+      awx.awx.bulk_host_create:
+        inventory: "{{ vdi_inventory_name }}"
+        hosts: 
+          - name: '{{vm_name}}.{{vm_domain}}'
+            enabled: true
+      

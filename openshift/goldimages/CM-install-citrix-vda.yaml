@@ -1,0 +1,59 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: windows-install-citrix-vda
+  namespace: openshift-virtualization-os-images
+immutable: false
+data:
+  citrix.ps1: |-
+    $wc = New-Object net.webclient
+    $wc.Downloadfile("REPLACE_WITH_URL_TO_CITRIX_ISO","C:\Citrix.iso")
+
+    $citrix_iso_letter = ((Mount-DiskImage -ImagePath 'C:\Citrix.iso') | Get-Volume).DriveLetter
+
+    $setupPath = "${citrix_iso_letter}:\CitrixInstaller\Install\x64\XenDesktop Setup\XenDesktopVDASetup.exe"
+    Start-Process $setupPath -Wait -ArgumentList '/QUIET /NOREBOOT /NORESUME /ENABLE_HDX_PORTS /ENABLE_REAL_TIME_TRANSPORT /CONTROLLERS "REPLACE_WITH_CITRIX_CONTROLLER" /COMPONENTS VDA /disableexperiencemetrics /includeadditional "Citrix MCS IODriver"'
+
+    Dismount-DiskImage -ImagePath 'C:\Citrix.iso'
+
+    rm C:\Citrix.iso
+    # Rename cached unattend.xml to avoid it is picked up by sysprep
+    mv C:\Windows\Panther\unattend.xml C:\Windows\Panther\unattend.citrix-installer.xml
+
+    #Remove-SmbShare -Name "CitrixInstaller"
+    # Eject CD, to avoid that the unattend.xml on the CD is picked up by sysprep
+    (New-Object -COMObject Shell.Application).NameSpace(17).ParseName("D:").InvokeVerb("Eject")
+  unattend.xml: |
+    <?xml version="1.0" encoding="utf-8"?>
+    <unattend xmlns="urn:schemas-microsoft-com:unattend" xmlns:wcm="http://schemas.microsoft.com/WMIConfig/2002/State">
+      <settings pass="specialize">
+        <component name="Microsoft-Windows-International-Core" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <InputLocale>0409:00000409</InputLocale>
+          <SystemLocale>en-US</SystemLocale>
+          <UILanguage>en-US</UILanguage>
+          <UserLocale>en-US</UserLocale>
+        </component>
+      </settings>
+      <settings pass="oobeSystem">
+        <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <Reseal>
+            <Mode>Audit</Mode>
+          </Reseal>
+        </component>
+      </settings>
+      <settings pass="auditUser">
+        <component name="Microsoft-Windows-Deployment" processorArchitecture="amd64" publicKeyToken="31bf3856ad364e35" language="neutral" versionScope="nonSxS">
+          <RunSynchronous>
+            <RunSynchronousCommand wcm:action="add">
+              <Order>1</Order>
+              <Path>PowerShell -ExecutionPolicy Bypass -NoProfile D:\citrix.ps1</Path>
+              <Description>Run Citrix VDA Install Script</Description>
+            </RunSynchronousCommand>
+          </RunSynchronous>
+          <Generalize>
+            <ForceShutdownNow>true</ForceShutdownNow>
+            <Mode>OOBE</Mode>
+          </Generalize>
+        </component>
+      </settings>
+    </unattend>

@@ -1,0 +1,15 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  generateName: windows-bios-installer-
+  namespace: openshift-cnv
+  labels: 
+    tekton.dev/pipeline: windows-bios-installer
+spec:
+  params:
+    - name: winImageDownloadURL
+      value: '<WINDOWS_11_ISO_URL>'  ## Replace this value
+  pipelineRef:
+    name: windows-bios-installer
+  taskRunTemplate:
+    serviceAccountName: pipeline

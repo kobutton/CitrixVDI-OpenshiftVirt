@@ -1,0 +1,17 @@
+apiVersion: tekton.dev/v1
+kind: PipelineRun
+metadata:
+  namespace: openshift-cnv
+  generateName: windows-efi-installer-
+  labels:
+    pipelinerun: windows-efi-installer
+spec:
+  params:
+    - name: winImageDownloadURL
+      value: '<WINDOWS_11_ISO_URL>'  ## Replace this value
+  pipelineRef:
+    name: windows-efi-installer
+  taskRunTemplate:
+    serviceAccountName: pipeline
+  timeouts:
+    pipeline: 1h0m0s

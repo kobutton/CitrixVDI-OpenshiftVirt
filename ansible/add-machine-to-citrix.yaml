@@ -1,0 +1,8 @@
+---
+- name: Windows VDI Config
+  hosts: citrix-director
+  tasks: 
+    - name: Add the new VDA to the Machine Group
+      ansible.windows.win_powershell: 
+        script: 'Add-BrokerMachine $(New-BrokerMachine -MachineName "{{vm_domain}}\{{vm_name}}" -CatalogUid $(Get-BrokerCatalog -CatalogName "{{citrix_machine_catalog}}").Uid) -DesktopGroup "{{citrix_delivery_group}}"'
+      register: script_output

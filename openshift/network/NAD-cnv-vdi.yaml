@@ -1,0 +1,8 @@
+apiVersion: k8s.cni.cncf.io/v1
+kind: NetworkAttachmentDefinition
+metadata:
+  annotations:
+    k8s.v1.cni.cncf.io/resourceName: bridge.network.kubevirt.io/cnv-bridge
+  name: cnv-bridge
+spec:
+  config: '{"name":"cnv-bridge","type":"cnv-bridge","cniVersion":"0.3.1","bridge":"cnv-bridge","macspoofchk":true,"ipam":{},"preserveDefaultVlan":false}'
