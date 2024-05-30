@@ -148,8 +148,8 @@ objects:
                   password: ${CLOUD_USER_PASSWORD}
                   chpasswd: { expire: False }
                   rh_subscription:
-                    activation-key: ocpv
-                    org: 8054534
+                    activation-key:
+                    org: 
                   ssh_pwauth: true
                   packages:
                   - dnf-automatic
