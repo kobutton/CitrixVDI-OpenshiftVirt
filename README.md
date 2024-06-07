@@ -6,6 +6,6 @@
 
 A full Citrx deployment is required for this to function: 
 - Active Directory 
-- Citrix Delivery Controller
+- Citrix Delivery Controller (Studio with Machine Catalogs and Delivery Groups Preconfigured) 
 - Citrix StoreFront
 
